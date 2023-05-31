@@ -59,33 +59,34 @@ class CsvReaderGui:
         self.setLayout(self.main_layout)
 
     def validate_inputs(self):
-        file_loaded = self.check_file_loaded()
-        file_name_valid = self.check_file_name()
+        file_loaded, fileMsg = self.check_file_loaded()
+        file_name_valid,fileNameMsg = self.check_file_name()
         self.plot_button.setEnabled(file_loaded and file_name_valid)
+        self.msg_show(fileMsg,fileNameMsg)
+        
+    def msg_show(self,fileMsg, fileNameMsg):
+        if len(fileMsg) == 0:
+            self.error_label.setText(fileNameMsg)
+        else:
+            self.error_label.setText(fileMsg)
     
     def check_file_loaded(self):
         try:
             if not self.csv_files:
-                self.error_label.setText("請先選擇CSV檔案")
-                return False
+                return False,'請先選擇CSV檔案'
             else:
-                self.error_label.setText("")
-                return True
+                return True,''
         except: # workaround 程式啟動時的檢查
-            self.error_label.setText("請先選擇CSV檔案")
-            return False
+            return False,'請先選擇CSV檔案'
     
     def check_file_name(self):
         file_name = self.file_name_input.text().strip()
         if not file_name:
-            self.error_label.setText("檔案名稱不可為空")
-            return False
+            return False,'檔案名稱不可為空'
         elif not self.is_valid_file_name(file_name):
-            self.error_label.setText("檔案名稱不合法")
-            return False
+            return False,'檔案名稱不合法'
         else:
-            self.error_label.setText("")
-            return True
+            return True,''
 
     def is_valid_file_name(self, file_name):
         invalid_chars = r'[\\/:"*?<>|]'
