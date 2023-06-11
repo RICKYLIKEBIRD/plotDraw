@@ -4,6 +4,7 @@ from csv_reader_gui import CsvReaderGui
 from axis_selection_dialog import AxisSelectionDialog
 import utils
 import matplotlib.pyplot as plt
+from csv_file_data import CSVFileData
 
 
 class CsvReaderApp(QWidget, CsvReaderGui):
@@ -12,6 +13,8 @@ class CsvReaderApp(QWidget, CsvReaderGui):
 
         self.setup_gui()
         self.csv_files = {}
+        self.main_attr_status = False
+        self.base_function_button_css = "font-weight: bold; border: 1px solid black; border-radius: 30px;"
 
     def open_csv(self):
         options = QFileDialog.Options()
@@ -28,26 +31,31 @@ class CsvReaderApp(QWidget, CsvReaderGui):
                 self.validate_inputs()
                 self.show_axis_select_dialog(os.path.basename(file_name))
                 
-    def update_axis_selectors(self, file_base_name, x_value, y_value):
-        file_data = self.csv_files[file_base_name]
-        x_selector = file_data['x_selector']
-        y_selector = file_data['y_selector']
-        x_selector.setCurrentText(x_value)
-        y_selector.setCurrentText(y_value)
-        
-    def save_axis_selection(self, file_base_name):
-        file_data = self.csv_files[file_base_name]
-        file_data['x_selector_current_index'] = file_data['x_selector'].currentIndex()
-        file_data['y_selector_current_index'] = file_data['y_selector'].currentIndex()
-        
+    def get_function_button_style(self):
+        return self.base_function_button_css + ("background-color: #82d985;" if self.main_attr_status else "background-color: #ed7288;")
+            
+    def test(self):
+        self.enable_button.setText("啟用" if self.main_attr_status else "禁用")
+        self.enable_button.setStyleSheet(self.get_function_button_style())
+        self.main_attr_status = not self.main_attr_status
+        self.x_axis_selector.setEnabled (self.main_attr_status)
+        self.y_axis_selector.setEnabled (self.main_attr_status)
                 
+        
+    def save_axis_selection(self, file_base_name,x_selector,y_selector):
+        file_data = self.csv_files[file_base_name]
+        file_data.x_selector = x_selector
+        file_data.y_selector = y_selector
+        file_data.x_selector_current_index = x_selector.currentIndex()
+        file_data.y_selector_current_index = y_selector.currentIndex()
+        
                 
     def show_axis_select_dialog(self, file_base_name):
         file_data = self.csv_files[file_base_name]
-        data = file_data['data']
+        data = file_data.data
 
-        x_selector_current_index = file_data.get('x_selector_current_index', 0)
-        y_selector_current_index = file_data.get('y_selector_current_index', 0)
+        x_selector_current_index = file_data.get_x_selector_current_index()
+        y_selector_current_index = file_data.get_y_selector_current_index()
 
         dialog = AxisSelectionDialog(self)
         for col in data.columns:
@@ -57,12 +65,18 @@ class CsvReaderApp(QWidget, CsvReaderGui):
         dialog.x_axis_selector.setCurrentIndex(x_selector_current_index)
         dialog.y_axis_selector.setCurrentIndex(y_selector_current_index)
 
-        file_data['x_selector'] = dialog.x_axis_selector
-        file_data['y_selector'] = dialog.y_axis_selector
 
-        dialog.save_button.clicked.connect(lambda: self.save_axis_selection(file_base_name))
+        dialog.save_button.clicked.connect(lambda: self.save_axis_selection(file_base_name,dialog.x_axis_selector,dialog.y_axis_selector))
 
         dialog.exec_()
+
+    def get_new_x_and_y_selector(self,columns):
+        x_axis_selector = QComboBox()
+        y_axis_selector = QComboBox()
+        for col in columns:
+            x_axis_selector.addItem(col)
+            y_axis_selector.addItem(col)
+        return x_axis_selector,y_axis_selector 
 
             
     def add_csv_file(self, file_name, data):
@@ -70,66 +84,34 @@ class CsvReaderApp(QWidget, CsvReaderGui):
         if file_base_name not in self.csv_files:
             
             # 在此處添加新的 x 和 y 軸選擇器
-            x_axis_selector = QComboBox()
-            y_axis_selector = QComboBox()
-            for col in data.columns:
-                x_axis_selector.addItem(col)
-                y_axis_selector.addItem(col)
-        
+            x_axis_selector , y_axis_selector = self.get_new_x_and_y_selector(data.columns)
             
             # 在此處添加檔案到清單中
             file_item = QListWidgetItem()
             file_widget = QWidget()
             file_widget.setStyleSheet("border: 1px solid black; padding: 5px; margin: 2px;")
+            
             file_layout = QHBoxLayout()
 
-            file_label = QLabel(file_base_name)
-            file_label.setStyleSheet("border: none;")
-            file_layout.addWidget(file_label)
-
-            # 加入用來叫出彈跳視窗的按鈕
-            edit_button = QPushButton("編輯")
-            edit_button.setFixedSize(60, 30)
-            edit_button.setStyleSheet("border: 1px solid black;")
-            edit_button.clicked.connect(lambda: self.show_axis_select_dialog(file_base_name))
-            file_layout.addWidget(edit_button)
-
+            file_layout.addWidget(utils.generate_file_name_label(file_base_name))
+            file_layout.addStretch(1)
+            file_layout.addWidget(utils.generate_item_button("編輯",lambda: self.show_axis_select_dialog(file_base_name)))
+            file_layout.addWidget(utils.generate_item_button("移除",lambda: self.remove_csv_file(file_base_name, file_item)))
             file_layout.addStretch(1)
 
-            remove_button = QPushButton("移除")
-            remove_button.setFixedSize(60, 30)
-            remove_button.setStyleSheet("border: 1px solid black;")
-            remove_button.clicked.connect(lambda: self.remove_csv_file(file_base_name, file_item, remove_button))
-            file_layout.addWidget(remove_button)
-
+        
             file_widget.setLayout(file_layout)
             file_item.setSizeHint(file_widget.sizeHint())
             
-            # 將 x 和 y 軸選擇器添加到 self.csv_files 字典中
-            self.csv_files[file_base_name] = {
-                'data': data,
-                'item': file_item, 
-                'widget': file_widget, 
-                'button': remove_button,
-                'x_selector': x_axis_selector,
-                'y_selector': y_axis_selector,
-                'x_value': data.columns[0],
-                'y_value': data.columns[1]
-            }
+            file_data = CSVFileData(file_base_name, data, file_item, file_widget, x_axis_selector, y_axis_selector)
 
+            self.csv_files[file_base_name] = file_data
             self.file_list_widget.addItem(file_item)
             self.file_list_widget.setItemWidget(file_item, file_widget)
 
-    def remove_csv_file(self, file_base_name, file_item, remove_button):
-        file_data = self.csv_files[file_base_name]
-        # x_selector = file_data['x_selector']
-        # y_selector = file_data['y_selector']
+    def remove_csv_file(self, file_base_name, file_item):
         del self.csv_files[file_base_name]
-        self.file_list_widget.takeItem(self.file_list_widget.row(file_item))
-        # self.axis_selectors_layout.removeRow(x_selector)
-        # self.axis_selectors_layout.removeRow(y_selector)
-        # len(self.csv_files)
-        
+        self.file_list_widget.takeItem(self.file_list_widget.row(file_item)) 
         self.validate_inputs() #卡控
     
 

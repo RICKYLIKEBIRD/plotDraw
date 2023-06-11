@@ -1,4 +1,8 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QLineEdit, QListWidget, QSizePolicy, QFormLayout,QDialog
+from PyQt5.QtWidgets import (
+    QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QLineEdit, QListWidget, QSizePolicy, 
+    QFormLayout, QWidget, QComboBox
+)
 import re
 
 class CsvReaderGui:
@@ -9,13 +13,31 @@ class CsvReaderGui:
         self.main_layout = QHBoxLayout()
 
         self.left_layout = QVBoxLayout()
+        
+        #固定左側面板不被拉伸
+        self.left_layout_container = QWidget()
+        self.left_layout_container.setLayout(self.left_layout)
+        self.left_layout_container.setMaximumWidth(300)  # 設定最大寬度
+        
+        self.main_layout.addWidget(self.left_layout_container)
 
         self.open_button = QPushButton("打開CSV檔案")
         self.open_button.clicked.connect(self.open_csv)
         self.left_layout.addWidget(self.open_button)
 
-        self.label = QLabel("選擇X軸和Y軸的欄位")
-        self.left_layout.addWidget(self.label)
+        self.label_and_button_layout = QHBoxLayout()
+        
+        self.label = QLabel("是否啟用統一設定")
+        self.label_and_button_layout.addWidget(self.label)
+        
+        self.enable_button = QPushButton("啟用")
+        self.enable_button.setFixedWidth(60)  # 設定按鈕的寬度
+        self.enable_button.setStyleSheet("font-weight: bold; border: 1px solid black; border-radius: 30px; background-color: #82d985;")
+        self.enable_button.clicked.connect(self.test)
+        
+        self.label_and_button_layout.addWidget(self.enable_button)
+        
+        self.left_layout.addLayout(self.label_and_button_layout)
 
         self.axis_selectors_layout = QFormLayout()  # 在此處添加 axis_selectors_layout
         self.left_layout.addLayout(self.axis_selectors_layout)
@@ -28,9 +50,33 @@ class CsvReaderGui:
 
         self.y_title_label = QLabel("自定義Y軸標題：")
         self.left_layout.addWidget(self.y_title_label)
-
+        
         self.y_title_input = QLineEdit()
         self.left_layout.addWidget(self.y_title_input)
+        
+        self.x_selector_label = QLabel("X軸資料:")
+        self.x_axis_selector = QComboBox()
+        self.x_selector_layout = QHBoxLayout()
+        
+        self.x_axis_selector.setFixedWidth(200)
+        self.x_axis_selector.setEnabled(False)
+        
+        self.x_selector_layout.addWidget(self.x_selector_label)
+        self.x_selector_layout.addWidget(self.x_axis_selector)
+        self.left_layout.addLayout(self.x_selector_layout)
+        
+        self.y_selector_label = QLabel("Y軸資料:")
+        self.y_axis_selector = QComboBox()
+        self.y_selector_layout = QHBoxLayout()
+        
+        self.y_axis_selector.setFixedWidth(200)
+        self.y_axis_selector.setEnabled(False)
+        
+        self.y_selector_layout.addWidget(self.y_selector_label)
+        self.y_selector_layout.addWidget(self.y_axis_selector)
+        self.left_layout.addLayout(self.y_selector_layout)
+
+        
 
         self.file_name_label = QLabel("自定義圖片檔名：")
         self.left_layout.addWidget(self.file_name_label)
@@ -47,8 +93,6 @@ class CsvReaderGui:
         self.plot_button.clicked.connect(self.plot_data)
         self.plot_button.setEnabled(False)
         self.left_layout.addWidget(self.plot_button)
-
-        self.main_layout.addLayout(self.left_layout)
 
         self.file_list_widget = QListWidget()
         size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
