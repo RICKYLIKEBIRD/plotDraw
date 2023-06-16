@@ -3,7 +3,9 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QSizePolicy, 
     QFormLayout, QWidget, QComboBox
 )
+from PyQt5.QtCore import Qt
 import re
+from qtwidgets import AnimatedToggle
 
 class CsvReaderGui:
     def setup_gui(self):
@@ -27,15 +29,18 @@ class CsvReaderGui:
 
         self.label_and_button_layout = QHBoxLayout()
         
-        self.label = QLabel("是否啟用統一設定")
-        self.label_and_button_layout.addWidget(self.label)
+        self.all_setting_label = QLabel("是否啟用統一設定")
+        self.all_setting_label.setStyleSheet("font-weight: bold;")
+        self.all_setting_label.setFixedWidth(135)
+        self.label_and_button_layout.addWidget(self.all_setting_label)
         
-        self.enable_button = QPushButton("啟用")
+        self.enable_button = AnimatedToggle(checked_color="#FFB000",pulse_checked_color="#44FFB000")
         self.enable_button.setFixedWidth(60)  # 設定按鈕的寬度
-        self.enable_button.setStyleSheet("font-weight: bold; border: 1px solid black; border-radius: 30px; background-color: #82d985;")
         self.enable_button.clicked.connect(self.test)
         
         self.label_and_button_layout.addWidget(self.enable_button)
+        self.label_and_button_layout.setAlignment(self.all_setting_label, Qt.AlignLeft)
+        self.label_and_button_layout.setAlignment(self.enable_button, Qt.AlignLeft)
         
         self.left_layout.addLayout(self.label_and_button_layout)
 

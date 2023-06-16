@@ -35,11 +35,10 @@ class CsvReaderApp(QWidget, CsvReaderGui):
         return self.base_function_button_css + ("background-color: #82d985;" if self.main_attr_status else "background-color: #ed7288;")
             
     def test(self):
-        self.enable_button.setText("啟用" if self.main_attr_status else "禁用")
-        self.enable_button.setStyleSheet(self.get_function_button_style())
+        
         self.main_attr_status = not self.main_attr_status
-        self.x_axis_selector.setEnabled (self.main_attr_status)
-        self.y_axis_selector.setEnabled (self.main_attr_status)
+        self.x_axis_selector.setEnabled (self.enable_button.isChecked())
+        self.y_axis_selector.setEnabled (self.enable_button.isChecked())
                 
         
     def save_axis_selection(self, file_base_name,x_selector,y_selector):
